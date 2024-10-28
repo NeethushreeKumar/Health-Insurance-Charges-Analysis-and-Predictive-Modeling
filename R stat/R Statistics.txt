@@ -1,0 +1,460 @@
+                                       #QUESTION 1 
+
+setwd("C://Stats")
+
+#Reading a CSV file called "Health-Insurance-Dataset.csv" from the current directory and adding its contents into a variable named "Insurance_data" This file possesses health insurance data that requires to be analysed.
+Insurance_data <- read.csv("Health-Insurance-Dataset.csv")
+
+# Now, Introducing two R packages: ggplot2 for displaying data and dplyr for modifying it.
+#Holtz, Y. (no date) Data visualization with R and GGPLOT2: The R Graph Gallery, Data visualization with R and ggplot2 | the R Graph Gallery. Available at: https://r-graph-gallery.com/ggplot2-package.html (Accessed: 1st March 2024). 
+#contributors, D.C. (no date) Aggregating and analyzing data with dplyr. Available at: https://datacarpentry.org/R-genomics/04-dplyr.html (Accessed:  1st March 2024). 
+
+install.packages("ggplot2")
+install.packages("dplyr")
+library(ggplot2)
+library(dplyr)
+
+# It displays the way the variables in the Insurance_data dataset are organised and gives a summary of their variables
+str(Insurance_data)
+summary(Insurance_data)
+
+# Using ggplot2, to generate histograms to observe how the numerical factors (age, BMI, charges) are spread out in the dataset.
+ggplot(Insurance_data, aes(x=age)) + geom_histogram(binwidth=1, fill="skyblue", color="black") + labs(title="Age Distribution")
+ggplot(Insurance_data, aes(x=bmi)) + geom_histogram(binwidth=1, fill="green", color="black") + labs(title="BMI Distribution")
+ggplot(Insurance_data, aes(x=charges)) + geom_histogram(fill="red", color="black") + labs(title="Charges Distribution") + scale_x_log10()
+
+# Generate bar charts to see how the categorical variables (like gender, smoking status, area, ) are spread out in the dataset.
+ggplot(Insurance_data, aes(x=sex)) + geom_bar(fill="cyan") + labs(title="Sex Distribution")
+ggplot(Insurance_data, aes(x=smoker)) + geom_bar(fill="salmon") + labs(title="Smoker Distribution")
+ggplot(Insurance_data, aes(x=region)) + geom_bar(fill="pink") + labs(title="Region Distribution")
+
+# Although the number of children is a numerical variable, It is treated as categorical here,because there is a definite number of children and a limited range of values for it. 
+ggplot(Insurance_data, aes(x=factor(children))) + geom_bar(fill="orange") + labs(title="Children Distribution")
+
+# Here, we use dplyr's select function to pick specific numerical variables (age, bmi, children, charges) from the dataset and then applying the summary function to get summary statistics for these variables.
+summary(select(Insurance_data, age, bmi, children, charges))
+
+# These lines compute and display the frequency of each category within the sex, smoker, and region variables to  understand the composition of the dataset in terms of these variables.
+table(Insurance_data$sex)
+table(Insurance_data$smoker)
+table(Insurance_data$region)
+
+
+                                                   #QUESTION 2
+
+# Pearson Correlation Coefficients to select numerical variables from the Insurance_data data set to compute and print their correlation matrix.
+#Turney, S. (2024) Pearson correlation coefficient (R): Guide & examples, Scribbr. Available at: https://www.scribbr.com/statistics/pearson-correlation-coefficient/ (Accessed: 1st March 2024). 
+numerical_vars <- select(Insurance_data, age, bmi, children, charges)
+cor_matrix <- cor(numerical_vars)
+print(cor_matrix)
+
+# Fisher's Tests to convert 'children' into 'has_children' to  simplify analyses
+# Fisher's test of independence in R  STHDA. Available at: http://www.sthda.com/english/wiki/chi-square-test-of-independence-in-r (Accessed: 1st March 2024). 
+Insurance_data$has_children <- ifelse(Insurance_data$children > 0, 'yes', 'no')
+
+#Fisher test evaluates the independence of these variables based on the distribution of counts for test between 'smoker' and 'sex'
+table_sex_smoker <- table(Insurance_data$sex, Insurance_data$smoker)
+fisher_test_sex_smoker <- fisher.test(table_sex_smoker)
+print(fisher_test_sex_smoker)
+
+# Fisher test evaluates the independence of these variables based on the distribution of counts for test between 'region' and 'children'
+table_region_children <- table(Insurance_data$region, Insurance_data$has_children)
+fisher_test_region_children <- fisher.test(table_region_children)
+print(fisher_test_region_children)
+
+# Since BMI is tested against a categorical variable, Categorizing 'bmi' based on common medical standards: Underweight, Normal, Overweight, Obesity
+Insurance_data$bmi_group <- cut(Insurance_data$bmi,
+                                breaks = c(-Inf, 18.5, 24.9, 29.9, Inf),
+                                labels = c("Underweight", "Normal weight", "Overweight", "Obese"))
+
+# Fisher test evaluates the independence of these variables based on the distribution of counts for test between 'bmi_category' and 'smoker'
+table_bmi_smoker_grouped <- table(Insurance_data$bmi_group, Insurance_data$smoker)
+fisher_test_bmi_smoker_grouped <- fisher.test(table_bmi_smoker_grouped)
+print(fisher_test_bmi_smoker_grouped)
+
+
+
+# visualizing relationships with the outcome variable (charges)
+# 
+# GGPLOT2 based publication ready plots (no date) ggplot2 Based Publication Ready Plots • ggpubr. Available at: https://rpkgs.datanovia.com/ggpubr/ (Accessed: 2nd March 2024). 
+install.packages("corrplot")
+install.packages("ggpubr")
+library(corrplot)
+library(ggpubr)
+
+# Pearson Correlation Coefficients for Numerical Variables
+numerical_data <- Insurance_data %>% select(age, bmi, children, charges)
+correlation_matrix <- cor(numerical_data)
+custom_colors <- c("salmon", "pink", "lavender", "orange", "lightgreen", "lightyellow", "cyan", "skyblue")
+corrplot(correlation_matrix, method = "pie", col = custom_colors)
+
+#Creating a scatter plot for the relationship of Age by Charge
+#Theme_minimal: A minimalistic theme with no background annotations. (no date) RDocumentation. Available at: https://www.rdocumentation.org/packages/ggplot2/versions/0.9.3.1/topics/theme_minimal (Accessed: 02 March 2024). 
+ggplot(Insurance_data, aes(x = age, y = charges)) + 
+  geom_point(aes(color = age), alpha = 0.6) + 
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(title = "Scatter Plot of Age by Charge",
+       x = "Age",
+       y = "Charges") +
+  theme_minimal() +
+  scale_color_gradient(low = "yellow", high = "red")
+
+# Creating a scatter plot for the relationship of Number of Children by Charge
+ggplot(Insurance_data, aes(x = children, y = charges)) +
+  geom_point(aes(color = as.factor(children)), alpha = 0.5) + 
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Scatter Plot of Number of Children by Charge", x = "Number of Children", y = "Charges") +
+  theme_minimal() +
+  scale_color_viridis_d()
+
+# Creating a scatter plot for the relationship of BMI by charges
+ggplot(Insurance_data, aes(x = bmi, y = charges, color = smoker)) +
+  geom_point() +
+  geom_smooth(method = "lm", aes(group = smoker), se = FALSE) + 
+  labs(title = "Scatter Plot of BMI by charges", x = "BMI", y = "Charges", color = "Smoker Status") +
+  theme_minimal() 
+
+# For categorical variables, since visualization via scatter plot isn't straightforward we'll create separate plots for each categorical against a numerical variable for Charges by Region
+ggplot(Insurance_data, aes(x = region, y = charges, fill = region)) + 
+  geom_jitter(alpha = 0.5, width = 0.2) + 
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) + 
+  scale_fill_brewer(palette = "Pastel1") + 
+  labs(title = "Charges by Region", x = "Region", y = "Charges") +
+  theme_minimal()
+
+
+# Scatter Plots for numerical variables with fitting lines for BMI vs Charges
+ggplot(Insurance_data, aes(x = bmi, y = charges)) +
+  geom_point(aes(color = charges, shape = smoker)) + 
+  scale_color_gradient(low = "red", high = "blue") + 
+  geom_smooth(method = "lm", se = FALSE, color = "black") + 
+  labs(title = "BMI vs Charges by Smoker Status", color = "Charges") +
+  theme_minimal() 
+
+# Scatter plot of BMI vs Charges, colored by Sex
+ggplot(Insurance_data, aes(x = bmi, y = charges, color = sex)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", aes(group = sex), se = FALSE) + 
+  labs(title = "BMI vs Charges by Sex")
+
+#Age Distribution by Smoker Status
+ggplot(Insurance_data, aes(x = age, fill = smoker)) + 
+  geom_histogram(binwidth = 5, color = "black", alpha = 0.7) + 
+  facet_grid(smoker ~ .) + 
+  labs(title = "Age Distribution by Smoker Status")
+
+#BMI Distribution Faceted by Children categories
+ggplot(Insurance_data, aes(x = bmi)) + 
+  geom_histogram(binwidth = 1, fill = "steelblue", color = "black") + 
+  facet_wrap(~cut(children, breaks = 0:5), scales = "free_y") + 
+  labs(title = "BMI Distribution by Number of Children")
+
+#Children and Charges distribution by Smoker Status
+ggplot(Insurance_data, aes(x = children, y = charges, color = smoker)) + 
+  geom_jitter(alpha = 0.6) + 
+  geom_smooth(method = "lm", se = FALSE, aes(group = smoker)) + 
+  labs(title = "Children vs Charges by Smoker Status")
+
+#Overall Results using results using results using scatter plots and a correlation matrix.
+install.packages("GGally")
+library(GGally)
+ggpairs(numerical_data)
+ggpairs(Insurance_data)
+          
+
+                                            #Question 3
+# RandomForest.pdf. Available at: https://cran.r-project.org/web/packages/randomForest/randomForest.pdf (Accessed: 4 March 2024). 
+#These lines convert the sex, smoker, and region variables into factors since random forests and other modeling techniques handle categorical variables
+install.packages("rpart")
+install.packages("randomForest")
+library(rpart)
+library(randomForest)
+Insurance_data$sex <- as.factor(Insurance_data$sex)
+Insurance_data$smoker <- as.factor(Insurance_data$smoker)
+Insurance_data$region <- as.factor(Insurance_data$region)
+
+# It creates the model matrix for the Insurance_data
+datInsurance_dataa <- model.matrix(~ . + 0, data = Insurance_data)
+
+
+# This fits a random forest model to predict charges using all other variables in Insurance_data
+rf_model <- randomForest(charges ~ ., data = Insurance_data, importance=TRUE, ntree=500)
+print(rf_model)
+varImpPlot(rf_model)
+
+# Convert to dataframe and add charges column back
+Insurance_data_transformed <- as.data.frame(Insurance_data)
+Insurance_data_transformed$charges <- Insurance_data$charges
+
+#This fits  a linear regression model using charges as the dependent variable and age, bmi, children, sex, smoker, and region as independent variables.
+model <- lm(charges ~ age + bmi + children + sex + smoker + region, data = Insurance_data)
+summary(model)
+
+# Generates predictions for charges based on the linear regression model for each observation in the dataset.
+predictions <- predict(model, Insurance_data)
+#print(predictions)
+
+# Calculates the MSE to evaluate the accuracy of the linear regression model's predictions.
+mse <- mean((predictions - Insurance_data$charges)^2)
+print(paste("MSE:", mse))
+
+# Extracts and prints the R-squared value from the model summary, indicating the proportion of variance in charges explained by the model.
+r_squared <- summary(model)$r.squared
+print(paste("R-squared:", r_squared))
+print(coef(summary(model)))
+
+# Obtains a decision tree model to predict charges using all other variables in Insurance_data, using ANOVA method to split nodes.
+# Taiyun Wei [cre,  aut] (2021) Corrplot: Visualization of a correlation matrix version 0.92 from cran, version 0.92 from CRAN. Available at: https://rdrr.io/cran/corrplot/ (Accessed: 5 March 2024). 
+tree_model <- rpart(charges ~ ., data = Insurance_data, method="anova")
+plot(tree_model)
+text(tree_model)
+
+
+
+                                                    #question 4 
+
+# These lines calculate the mean and standard deviation of insurance charges, removing any NA values, to understand the central tendency and dispersion of charges.
+# Simulator, A. and Acumen SimulatorAcumen Simulator 2311 silver badge77 bronze badges (1963) Splitting into two identical standard deviations, Cross Validated. Available at: https://stats.stackexchange.com/questions/327363/splitting-into-two-identical-standard-deviations (Accessed: 06 March 2024). 
+mean_charges <- mean(Insurance_data$charges, na.rm = TRUE)
+std_charges <- sd(Insurance_data$charges, na.rm = TRUE)
+
+# Based on the mean and standard deviation, insurance charges are categorized into 'Low', 'Average', and 'High'. This categorization facilitates group-wise analysis later.
+Insurance_data$CHARGE_split <- ifelse(Insurance_data$charges < (mean_charges - std_charges), 'Low',
+                            ifelse(Insurance_data$charges > (mean_charges + std_charges), 'High', 'Average'))
+
+# Ensures that 'CHARGE_split' is treated as a categorical variable, which is necessary for the statistical tests and visualizations.
+Insurance_data$CHARGE_split <- as.factor(Insurance_data$CHARGE_split)
+table(Insurance_data$CHARGE_split)
+
+#Wilcoxon test in R: How to compare 2 groups under the non-normality assumption? (no date) Stats and R. Available at: https://statsandr.com/blog/wilcoxon-test-in-r-how-to-compare-2-groups-under-the-non-normality-assumption/ (Accessed: 06 March 2024). 
+# These lines perform non-parametric tests comparing distributions of 'age' across different 'CHARGE_split' groups.
+mw_test_low_avg <- wilcox.test(age ~ CHARGE_split, data = Insurance_data[Insurance_data$CHARGE_split %in% c('Low', 'Average'),])
+print(mw_test_low_avg)
+mw_test_low_high <- wilcox.test(age ~ CHARGE_split, data = Insurance_data[Insurance_data$CHARGE_split %in% c('Low', 'High'),])
+print(mw_test_low_high)
+mw_test_avg_high <- wilcox.test(age ~ CHARGE_split, data = Insurance_data[Insurance_data$CHARGE_split %in% c('Average', 'High'),])
+print(mw_test_avg_high)
+
+# These lines perform non-parametric tests comparing distributions of 'bmi' across different 'CHARGE_split' groups.
+mw_test_low_avg <- wilcox.test(bmi ~ CHARGE_split, data = Insurance_data[Insurance_data$CHARGE_split %in% c('Low', 'Average'),])
+print(mw_test_low_avg)
+mw_test_low_high <- wilcox.test(bmi ~ CHARGE_split, data = Insurance_data[Insurance_data$CHARGE_split %in% c('Low', 'High'),])
+print(mw_test_low_high)
+mw_test_avg_high <- wilcox.test(bmi ~ CHARGE_split, data = Insurance_data[Insurance_data$CHARGE_split %in% c('Average', 'High'),])
+print(mw_test_avg_high)
+
+#These lines perform non-parametric tests comparing distributions of 'children' across different 'CHARGE_split' groups.
+mw_test_low_avg <- wilcox.test(children ~ CHARGE_split, data = Insurance_data[Insurance_data$CHARGE_split %in% c('Low', 'Average'),])
+print(mw_test_low_avg)
+mw_test_low_high <- wilcox.test(children ~ CHARGE_split, data = Insurance_data[Insurance_data$CHARGE_split %in% c('Low', 'High'),])
+print(mw_test_low_high)
+mw_test_avg_high <- wilcox.test(children ~ CHARGE_split, data = Insurance_data[Insurance_data$CHARGE_split %in% c('Average', 'High'),])
+print(mw_test_avg_high)
+
+#These lines perform non-parametric tests comparing distributions of 'charges' across different 'CHARGE_split' groups.
+mw_test_low_avg <- wilcox.test(charges ~ CHARGE_split, data = Insurance_data[Insurance_data$CHARGE_split %in% c('Low', 'Average'),])
+print(mw_test_low_avg)
+mw_test_low_high <- wilcox.test(charges ~ CHARGE_split, data = Insurance_data[Insurance_data$CHARGE_split %in% c('Low', 'High'),])
+print(mw_test_low_high)
+mw_test_avg_high <- wilcox.test(charges ~ CHARGE_split, data = Insurance_data[Insurance_data$CHARGE_split %in% c('Average', 'High'),])
+print(mw_test_avg_high)
+
+
+# Ensures variables are factors
+Insurance_data$smoker <- factor(Insurance_data$smoker)
+Insurance_data$sex <- factor(Insurance_data$sex)
+Insurance_data$region <- factor(Insurance_data$region)
+Insurance_data$CHARGE_split <- factor(Insurance_data$CHARGE_split) # Ensure this is a factor as well
+
+ #These sections ensure 'smoker', 'sex', and 'region' are treated as categorical factors before performing fisher tests to evaluate the independence between these variables and the 'CHARGE_split' categories
+table_smoker_CHARGE <- table(Insurance_data$smoker, Insurance_data$CHARGE_split)
+fisher_test_smoker_CHARGE <- fisher.test(table_smoker_CHARGE)
+print(fisher_test_smoker_CHARGE)
+
+table_sex_CHARGE <- table(Insurance_data$sex, Insurance_data$CHARGE_split)
+fisher_test_sex_CHARGE <- fisher.test(table_sex_CHARGE)
+print(fisher_test_sex_CHARGE)
+
+table_region_CHARGE <- table(Insurance_data$region, Insurance_data$CHARGE_split)
+fisher_test_region_CHARGE <- fisher.test(table_region_CHARGE, workspace = 2e8) # Adding 200 MB workspace
+print(fisher_test_region_CHARGE)
+
+
+# These lines create boxplots for 'age', 'bmi', 'children', and 'charges' across 'CHARGE_split' categories using ggplot2
+ggplot(Insurance_data, aes(x = CHARGE_split, y = age, fill = CHARGE_split)) +
+  geom_boxplot() +
+  labs(title = "Age Distribution by CHARGE Split", x = "CHARGE Split", y = "Age")
+ggplot(Insurance_data, aes(x = CHARGE_split, y = bmi, fill = CHARGE_split)) +
+  geom_boxplot() +
+  labs(title = "BMI Distribution by CHARGE Split", x = "CHARGE Split", y = "BMI")
+ggplot(Insurance_data, aes(x = CHARGE_split, y = children, fill = CHARGE_split)) +
+  geom_boxplot() +
+  labs(title = "Children Distribution by CHARGE Split", x = "CHARGE Split", y = "Children")
+ggplot(Insurance_data, aes(x = CHARGE_split, y = charges, fill = CHARGE_split)) +
+  geom_boxplot() +
+  labs(title = "Charges Distribution by CHARGE Split", x = "CHARGE Split", y = "Charges")
+
+
+# These plots visualize the distribution of 'smoker', 'sex', and 'region' within each 'CHARGE_split' category
+ggplot(Insurance_data, aes(x = CHARGE_split, fill = smoker)) + 
+  geom_bar(position = "dodge") + 
+  labs(title = "Smoker Status by CHARGE_split Category", x = "", y = "Count")
+ggplot(Insurance_data, aes(x = CHARGE_split, fill = sex)) + 
+  geom_bar(position = "dodge") + 
+  labs(title = "Sex by CHARGE_split Category", x = "", y = "Count")
+ggplot(Insurance_data, aes(x = CHARGE_split, fill = region)) + 
+  geom_bar(position = "dodge") + 
+  labs(title = "Region by CHARGE_split Category", x = "", y = "Count") 
+
+
+                                           #QUESTION FIVE
+
+
+#first visualize the distribution of charges and perform tests for normality (e.g., Shapiro-Wilk test) to decide which statistical test is most appropriate
+
+install.packages("readr")
+install.packages("dunn.test")
+library(readr)
+library(dunn.test)
+
+ggplot(df, aes(x = charges)) +
+  geom_histogram(aes(y = ..density..), binwidth = 1000, colour = "black", fill = "skyblue") +
+  geom_density(alpha = .2, fill = "blue") +
+  labs(title = "Distribution of Charges", x = "Charges", y = "Density")
+
+# Perform the Shapiro-Wilk test for normality on 'charges'and a test for normality on the charges variable. 
+# Zach (2021) How to perform a Shapiro-Wilk test in R (with examples), Statology. Available at: https://www.statology.org/shapiro-wilk-test-r/ (Accessed: 07 March 2024). 
+shapiro_test_result <- shapiro.test(Insurance_data$charges)
+print(shapiro_test_result)
+
+#Shapiro-Wilk test for normality suggests that the data are not normally distributed (p-value < 0.05), the Kruskal-Wallis test would be more appropriate for comparing groups. 
+# Performs a test for normality on the charges variable. The Shapiro-Wilk test's null hypothesis is that the data are normally distributed. 
+#Kruskal–wallis test (no date) R Companion: Kruskal–Wallis Test. Available at: https://rcompanion.org/rcompanion/d_06.html (Accessed: 07 March 2024). 
+kruskal_test <- kruskal.test(bmi ~ region, data = Insurance_data)
+print(kruskal_test)
+
+kruskal_test <- kruskal.test(age ~ region, data = Insurance_data)
+print(kruskal_test)
+
+kruskal_test <- kruskal.test(children ~ region, data = Insurance_data)
+print(kruskal_test)
+
+kruskal_test <- kruskal.test(charges ~ region, data = Insurance_data)
+print(kruskal_test)
+
+# After finding significant differences with the Kruskal-Wallis test, Dunn's test for multiple comparisons with Bonferroni correction is applied. 
+# Dunn’s test of multiple comparisons - dunn_test (no date) - dunn_test • rstatix. Available at: https://rpkgs.datanovia.com/rstatix/reference/dunn_test.html (Accessed: 07 March 2024).
+# Zach (2022) How to perform a Bonferroni correction in R, Statology. Available at: https://www.statology.org/bonferroni-correction-in-r/ (Accessed: 07 March 2024). 
+dunn_result <- dunn.test(Insurance_data$bmi, Insurance_data$region, method="bonferroni")
+print(dunn_result)
+
+dunn_result <- dunn.test(Insurance_data$age, Insurance_data$region, method="bonferroni")
+print(dunn_result)
+
+dunn_result <- dunn.test(Insurance_data$children, Insurance_data$region, method="bonferroni")
+print(dunn_result)
+
+dunn_result <- dunn.test(Insurance_data$charges, Insurance_data$region, method="bonferroni")
+print(dunn_result)
+
+#This visualization helps identify regional disparities in these variables, showing distributions, medians, and potential outliers.
+
+levels(Insurance_data$region)
+ggplot(Insurance_data, aes(x = region, y = bmi, fill = region)) +
+  geom_boxplot() +
+  labs(title = "BMI Distribution by Region", x = "Region", y = "bmi") +
+  scale_fill_manual(values = c("northeast" = "steelblue", 
+                               "southeast" = "lightgreen", 
+                               "southwest" = "lightyellow", 
+                               "northwest" = "lavender")) +
+  theme_minimal()
+
+levels(Insurance_data$region)
+ggplot(Insurance_data, aes(x = region, y = age, fill = region)) +
+  geom_boxplot() +
+  labs(title = "Age Distribution by Region", x = "Region", y = "age") +
+  scale_fill_manual(values = c("northeast" = "steelblue", 
+                               "southeast" = "lightgreen", 
+                               "southwest" = "lightyellow", 
+                               "northwest" = "lavender")) +
+  theme_minimal()
+
+levels(Insurance_data$region)
+ggplot(Insurance_data, aes(x = region, y = children, fill = region)) +
+  geom_boxplot() +
+  labs(title = "Children Distribution by Region", x = "Region", y = "Children") +
+  scale_fill_manual(values = c("northeast" = "steelblue", 
+                               "southeast" = "lightgreen", 
+                               "southwest" = "lightyellow", 
+                               "northwest" = "lavender")) +
+  theme_minimal()
+
+levels(Insurance_data$region)
+ggplot(Insurance_data, aes(x = region, y = charges, fill = region)) +
+  geom_boxplot() +
+  labs(title = "Charges Distribution by Region", x = "Region", y = "Charges") +
+  scale_fill_manual(values = c("northeast" = "steelblue", 
+                               "southeast" = "lightgreen", 
+                               "southwest" = "lightyellow", 
+                               "northwest" = "lavender")) +
+  theme_minimal()
+
+
+
+# Assess the independence between smoker and region as well as between sex and region
+table_smoker_region <- table(Insurance_data$smoker, Insurance_data$region)
+chi_sq_result <- chisq.test(table_smoker_region)
+print(chi_sq_result)
+
+table_sex_region <- table(Insurance_data$sex, Insurance_data$region)
+chi_sq_result <- chisq.test(table_sex_region)
+print(chi_sq_result)
+
+# Creates contingency tables for smoker by region and sex by region, laying the groundwork for chi-square tests and visualizations.
+table_smoker_region <- table(Insurance_data$smoker, Insurance_data$region)
+table_sex_region <- table(Insurance_data$sex, Insurance_data$region)
+
+# Convert the table to a dataframe for plotting
+Insurance_data_smoker_region <- as.data.frame(table_smoker_region)
+Insurance_data_sex_region <- as.data.frame(table_sex_region)
+
+# Rename the columns 
+colnames(Insurance_data_smoker_region) <- c("Smoker", "Region", "Count")
+colnames(Insurance_data_sex_region) <- c("Sex", "Region", "Count")
+
+# Transforms the contingency tables into data frames and create bar plots visualizing the counts of smokers/non-smokers and males/females across different regions
+ggplot(data = Insurance_data_smoker_region, aes(x = Region, y = Count, fill = Smoker)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Count of Smokers and Non-Smokers by Region",
+       x = "Region",
+       y = "Count",
+       fill = "Smoker Status") +
+  scale_fill_brewer(palette = "Set2")
+
+ggplot(data = Insurance_data_sex_region, aes(x = Region, y = Count, fill = Sex)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Count of Males and Females by Region",
+       x = "Region",
+       y = "Count",
+       fill = "Sex") +
+  scale_fill_brewer(palette = "Set2")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
