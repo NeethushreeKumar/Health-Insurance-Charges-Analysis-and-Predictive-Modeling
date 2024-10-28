@@ -3,6 +3,17 @@
 ## Project Overview
 This project involves a statistical analysis of a health insurance dataset. It explores regional variations, demographic factors, and health-related variables that influence insurance charges. The aim is to identify key predictors and provide insights into how factors such as age, BMI, smoking status, and number of children impact insurance costs.
 
+## Technologies and Tools Used
+
+- **Language**: R
+- **Packages**:
+  - **ggplot2**: For data visualization
+  - **dplyr**: For data manipulation
+  - **randomForest**: For implementing a random forest model
+  - **corrplot**: For creating correlation matrices
+  - **rpart**: For decision trees
+  - **GGally**: For pairwise plot matrices
+
 ## Contents
 - **Introduction**: Overview of project objectives and data.
 - **Dataset Description**: Summary and structure of the dataset used.
