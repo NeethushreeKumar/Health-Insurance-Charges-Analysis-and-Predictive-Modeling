@@ -1,4 +1,4 @@
-# Health-Insurance-Charges-Analysis-and-Predictive-Modeling
+# Health-Insurance-Charges-Analysis-and-Predictive-Modeling Using R langauge
 
 ## Project Overview
 This project involves a statistical analysis of a health insurance dataset. It explores regional variations, demographic factors, and health-related variables that influence insurance charges. The aim is to identify key predictors and provide insights into how factors such as age, BMI, smoking status, and number of children impact insurance costs.
